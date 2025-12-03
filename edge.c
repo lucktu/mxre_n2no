@@ -1883,6 +1883,7 @@ static void readFromIPSocket( n2n_edge_t * eee )
                     eee->last_sup = now;
                     eee->sn_wait=0;
                     eee->sup_attempts = N2N_EDGE_SUP_ATTEMPTS; /* refresh because we got a response */
+                    traceEvent(TRACE_NORMAL, "[OK] Edge Peer <<< ================ >>> Super Node");
 
                     /* REVISIT: store sn_back */
                     eee->register_lifetime = ra.lifetime;
