@@ -2,14 +2,14 @@ project(n2n C)
 cmake_minimum_required(VERSION 3.7)
 
 # N2n information
-set(N2N_VERSION 2.3.0)
+set(N2N_VERSION 2.3.1)
 set(N2N_OSNAME ${CMAKE_SYSTEM_NAME})
 
 add_definitions(-DN2N_VERSION=\"${N2N_VERSION}\" -DN2N_OSNAME=\"${N2N_OSNAME}\")
 
 # N2n specific params
 if(NOT DEFINED N2N_OPTION_AES)
-set(N2N_OPTION_AES ON)
+set(N2N_OPTION_AES OFF)
 endif(NOT DEFINED N2N_OPTION_AES)
 
 if(N2N_OPTION_AES)

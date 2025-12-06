@@ -104,14 +104,19 @@ n2n_tostat_t transop_tick_speck(n2n_trans_op_t *arg, time_t now) {
 }
 
 int transop_addspec_speck(n2n_trans_op_t *arg, const n2n_cipherspec_t *cspec) {
-    // Extract key from cspec->opaque and setup cipher
     const char *key_data = (const char *)cspec->opaque;
     transop_speck_t *priv = (transop_speck_t *)arg->priv;
+    size_t key_len;
 
-    // Simple key setup - assume key_data is the raw key
-    speck_expand_key((const uint8_t *)key_data, &priv->ctx);
+    // Skip "0_" prefix if present
+    if (strlen(key_data) > 2 && key_data[0] == '0' && key_data[1] == '_') {
+        key_data += 2;
+    }
 
-    return 0;
+    key_len = strlen(key_data);
+
+    // CRITICAL: Use setup_speck_key instead of speck_expand_key directly
+    return setup_speck_key(priv, (const uint8_t *)key_data, key_len);
 }
 
 int transop_speck_init(n2n_trans_op_t *ttt) {

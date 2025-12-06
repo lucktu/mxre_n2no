@@ -62,7 +62,7 @@ char const* gcrypt_version;
 #define TRANSOP_TICK_INTERVAL           (10) /* sec */
 
 /** maximum length of command line arguments */
-#define MAX_CMDLINE_BUFFER_LENGTH    4096
+#define MAX_CMDLINE_BUFFER_LENGTH       4096
 
 /** maximum length of a line in the configuration file */
 #define MAX_CONFFILE_LINE_LENGTH        1024
@@ -94,7 +94,7 @@ char const* gcrypt_version;
 
 /* ******************************************************* */
 
-#define N2N_EDGE_SN_HOST_SIZE 48
+#define N2N_EDGE_SN_HOST_SIZE   48
 
 typedef char n2n_sn_name_t[N2N_EDGE_SN_HOST_SIZE];
 
@@ -161,11 +161,8 @@ static int supernode2addr(n2n_sock_t * sn, int af, const n2n_sn_name_t addr);
 static void send_packet2net(n2n_edge_t * eee,
                 uint8_t *decrypted_msg, size_t len);
 
-
 /* ************************************** */
 
-#if 0
-/* parse the configuration file */
 static int readConfFile(const char * filename, char * const linebuffer) {
     FILE* fd;
     char* buffer;
@@ -264,7 +261,7 @@ static int edge_init_speck( n2n_edge_t * eee, uint8_t *encrypt_pwd, uint64_t enc
                 &(eee->transop[N2N_TRANSOP_SPECK_IDX]), &spec );
 
     if (retval == 0) {
-        eee.tx_transop_idx = N2N_TRANSOP_SPECK_IDX;
+        eee->tx_transop_idx = N2N_TRANSOP_SPECK_IDX;
     }
 
     return retval;
@@ -327,7 +324,7 @@ static char ** buildargv(int * effectiveargc, char * const linebuffer) {
     *effectiveargc = argc;
     return argv;
 }
-#endif
+
 /* ************************************** */
 
 
@@ -346,7 +343,7 @@ static int edge_init(n2n_edge_t * eee)
     transop_null_init(    &(eee->transop[N2N_TRANSOP_NULL_IDX]) );
     transop_twofish_init( &(eee->transop[N2N_TRANSOP_TF_IDX]  ) );
     transop_aes_init( &(eee->transop[N2N_TRANSOP_AESCBC_IDX]  ) );
-				transop_speck_init( &(eee->transop[N2N_TRANSOP_SPECK_IDX]) );
+    transop_speck_init( &(eee->transop[N2N_TRANSOP_SPECK_IDX]) );
 
     eee->tx_transop_idx = N2N_TRANSOP_NULL_IDX; /* No guarantee the others have been setup */
 
@@ -356,7 +353,7 @@ static int edge_init(n2n_edge_t * eee)
     /* community_name set to NULLs by memset */
     eee->null_transop   = 0;
     eee->udp_sock       = -1;
-    eee->mgmt_sock  = -1;
+    eee->mgmt_sock      = -1;
     eee->dyn_ip_mode    = 0;
     eee->allow_routing  = 0;
     eee->drop_multicast = 1;
@@ -399,7 +396,7 @@ static int edge_init_aes( n2n_edge_t * eee, uint8_t *encrypt_pwd, uint64_t encry
 
     /* Try hex first, if fails use ASCII directly */
     int pstat = n2n_parse_hex(spec.opaque + 2, sizeof(spec.opaque) - 2,
-                             (char*)encrypt_pwd, encrypt_pwd_len);
+        (char*)encrypt_pwd, encrypt_pwd_len);
 
     if (pstat <= 0) {
         /* Hex parsing failed, use ASCII directly */
@@ -410,23 +407,13 @@ static int edge_init_aes( n2n_edge_t * eee, uint8_t *encrypt_pwd, uint64_t encry
 
     /* Add the spec to the AES transform */
     retval = (eee->transop[N2N_TRANSOP_AESCBC_IDX].addspec)(
-                &(eee->transop[N2N_TRANSOP_AESCBC_IDX]), &spec );
+        &(eee->transop[N2N_TRANSOP_AESCBC_IDX]), &spec );
 
     if (retval == 0) {
         eee->tx_transop_idx = N2N_TRANSOP_AESCBC_IDX;
     }
 
     return retval;
-}
-
-static int edge_init_speck( n2n_edge_t * eee, uint8_t *encrypt_key, uint64_t encrypt_pwd_len )
-{
-    if (eee->transop[N2N_TRANSOP_SPECK_IDX].priv != NULL) {
-        transop_deinit_speck(&eee->transop[N2N_TRANSOP_SPECK_IDX]);
-    }
-
-    return setup_speck_key(eee->transop[N2N_TRANSOP_SPECK_IDX].priv,
-                          encrypt_key, encrypt_pwd_len);
 }
 
 /** Find the transop op-struct for the transform enumeration required.
@@ -446,9 +433,9 @@ static int transop_enum_to_index( n2n_transform_t id )
     case N2N_TRANSFORM_ID_AESCBC:
         return N2N_TRANSOP_AESCBC_IDX;
         break;
-				case N2N_TRANSFORM_ID_SPECK:
-								return N2N_TRANSOP_SPECK_IDX;
-								break;
+    case N2N_TRANSFORM_ID_SPECK:
+        return N2N_TRANSOP_SPECK_IDX;
+        break;
     default:
         return -1;
     }
@@ -525,6 +512,7 @@ static int edge_init_keyschedule( n2n_edge_t * eee )
             {
             case N2N_TRANSOP_TF_IDX:
             case N2N_TRANSOP_AESCBC_IDX:
+            case N2N_TRANSOP_SPECK_IDX:
             {
                 retval = (eee->transop[idx].addspec)( &(eee->transop[idx]),
                                                       &(specs[i]) );
@@ -612,7 +600,6 @@ void print_n2n_version() {
 #endif // N2N_HAVE_AES
     printf("Copyright 2007-09 - http://www.ntop.org\n"
            "Copyright 2018-19 - https://github.org/mxre/n2n\n\n");
-
 }
 
 static void help() {
@@ -626,7 +613,7 @@ static void help() {
 #endif /* #if N2N_CAN_NAME_IFACE */
         "-a [static:|dhcp:]<tun IP address>/<prefixlen> "
         "-c <community> "
-				"-B <encryption mode> "
+        "-B <encryption mode> "
         "[-k <encrypt key> | -K <key file>] "
 #if defined(N2N_HAVE_SETUID)
         "[-u <uid> -g <gid>]"
@@ -652,8 +639,8 @@ static void help() {
     printf("-a <mode:IPv4/prefixlen> | Set interface IPv4 address. For DHCP use '-r -a dhcp:0.0.0.0/0'\n");
     printf("-A <IPv6>/<prefixlen>    | Set interface IPv6 address, only supported if IPv4 set to 'static'\n");
     printf("-c <community>           | n2n community name the edge belongs to.\n");
-				printf("-B <mode>                | Encryption: B0 = keyfile(-K), B1 = disable, B2 = twofish(-k), B3 = AES-CBC(-k), B5 = Speck(-k)\n");
-				printf("                         : '-B3' can also be used as '-B 3' (for better compatibility)\n");
+    printf("-B <mode>                | Encryption: B0 = keyfile(-K), B1 = disable, B2 = twofish(-k), B3 = AES-CBC(-k), B5 = Speck(-k)\n");
+    printf("                         : '-B3' can also be used as '-B 3' (for better compatibility)\n");
     printf("-k <encrypt key>         | Encryption key (ASCII, max 32) - also N2N_KEY=<encrypt key>. Not with -K.\n");
     printf("-K <key file>            | Specify a key schedule file to load. Not with -k.\n");
     printf("-l <supernode host:port> | Supernode IP:port\n");
@@ -720,7 +707,7 @@ static ssize_t sendto_sock( SOCKET fd, const void * buf, size_t len, const n2n_s
 
 /** Send a REGISTER packet to another edge. */
 static void send_register( n2n_edge_t * eee,
-                           const n2n_sock_t * remote_peer)
+    const n2n_sock_t * remote_peer)
 {
     uint8_t pktbuf[N2N_PKT_BUF_SIZE];
     size_t idx;
@@ -744,7 +731,7 @@ static void send_register( n2n_edge_t * eee,
     encode_REGISTER( pktbuf, &idx, &cmn, &reg );
 
     traceEvent( TRACE_INFO, "send REGISTER %s",
-                sock_to_cstr( sockbuf, remote_peer ) );
+        sock_to_cstr( sockbuf, remote_peer ) );
 
 
     sendto_sock( eee->udp_sock, pktbuf, idx, remote_peer );
@@ -754,7 +741,7 @@ static void send_register( n2n_edge_t * eee,
 
 /** Send a REGISTER_SUPER packet to the current supernode. */
 static void send_register_super( n2n_edge_t * eee,
-                                 const n2n_sock_t * supernode)
+    const n2n_sock_t * supernode)
 {
     uint8_t pktbuf[N2N_PKT_BUF_SIZE];
     size_t idx;
@@ -784,13 +771,11 @@ static void send_register_super( n2n_edge_t * eee,
     encode_REGISTER_SUPER( pktbuf, &idx, &cmn, &reg );
 
     traceEvent( TRACE_INFO, "send REGISTER_SUPER to %s",
-                sock_to_cstr( sockbuf, supernode ) );
-
+        sock_to_cstr( sockbuf, supernode ) );
 
     sendto_sock( eee->udp_sock, pktbuf, idx, supernode );
 
 }
-
 
 /** Send a REGISTER_ACK packet to a peer edge. */
 static void send_register_ack( n2n_edge_t * eee,
@@ -819,7 +804,7 @@ static void send_register_ack( n2n_edge_t * eee,
     encode_REGISTER_ACK( pktbuf, &idx, &cmn, &ack );
 
     traceEvent( TRACE_INFO, "send REGISTER_ACK %s",
-                sock_to_cstr( sockbuf, remote_peer ) );
+        sock_to_cstr( sockbuf, remote_peer ) );
 
 
     sendto_sock( eee->udp_sock, pktbuf, idx, remote_peer );
@@ -832,7 +817,7 @@ static void send_register_ack( n2n_edge_t * eee,
  *  the edge is going away.
  */
 static void send_deregister(n2n_edge_t * eee,
-                            n2n_sock_t * remote_peer)
+    n2n_sock_t * remote_peer)
 {
     /* Marshall and send message */
 }
@@ -957,8 +942,6 @@ void set_peer_operational( n2n_edge_t * eee,
     }
 
     if ( scan ) {
-
-
         /* Remove scan from pending_peers. */
         if ( prev ) {
             prev->next = scan->next;
@@ -982,13 +965,11 @@ void set_peer_operational( n2n_edge_t * eee,
         traceEvent( TRACE_INFO, "Operational peers list size=%u",
                     (unsigned int)peer_list_size( eee->known_peers ) );
 
-
         scan->last_seen = time(NULL);
     } else {
         traceEvent( TRACE_DEBUG, "Failed to find sender in pending_peers." );
     }
 }
-
 
 n2n_mac_t broadcast_mac = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
@@ -1020,7 +1001,6 @@ static int is_empty_ip_address( const n2n_sock_t * sock )
 
     return 1;
 }
-
 
 /** Keep the known_peers list straight.
  *
@@ -1107,11 +1087,7 @@ static void update_peer_address(n2n_edge_t * eee,
     }
 }
 
-
-
 #if defined(DUMMY_ID_00001) /* Disabled waiting for config option to enable it */
-
-
 
 static char gratuitous_arp[] = {
   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, /* Dest mac */
@@ -1127,7 +1103,6 @@ static char gratuitous_arp[] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* Target mac */
   0x00, 0x00, 0x00, 0x00 /* Target IP */
 };
-
 
 /** Build a gratuitous ARP packet for a /24 layer 3 (IP) network. */
 static int build_gratuitous_arp(char *buffer, uint16_t buffer_len) {
@@ -1157,9 +1132,6 @@ static void send_grat_arps(n2n_edge_t * eee,) {
   send_packet2net(eee, buffer, len); /* Two is better than one :-) */
 }
 #endif /* #if defined(DUMMY_ID_00001) */
-
-
-
 
 /** @brief Check to see if we should re-register with the supernode.
  *
@@ -1216,8 +1188,6 @@ static void update_supernode_reg( n2n_edge_t * eee, time_t nowTime )
     eee->last_register_req = nowTime;
 }
 
-
-
 /* @return 1 if destination is a peer, 0 if destination is supernode */
 static int find_peer_destination(n2n_edge_t * eee,
                                  n2n_mac_t mac_address,
@@ -1260,9 +1230,6 @@ static int find_peer_destination(n2n_edge_t * eee,
     return retval;
 }
 
-
-
-
 /* *********************************************** */
 
 static const struct option long_options[] = {
@@ -1277,7 +1244,6 @@ static const struct option long_options[] = {
 };
 
 /* ***************************************************** */
-
 
 /** Send an ecapsulated ethernet PACKET to a destination edge or broadcast MAC
  *  address. */
@@ -1310,7 +1276,6 @@ static int send_PACKET( n2n_edge_t * eee,
     return 0;
 }
 
-
 /* Choose the transop for Tx. This should be based on the newest valid
  * cipherspec in the key schedule.
  *
@@ -1328,7 +1293,6 @@ static size_t edge_choose_tx_transop( const n2n_edge_t * eee )
 
     return eee->tx_transop_idx;
 }
-
 
 /** A layer-2 packet was received at the tunnel and needs to be sent via UDP. */
 static void send_packet2net(n2n_edge_t * eee,
@@ -1415,7 +1379,6 @@ static void send_packet2net(n2n_edge_t * eee,
     send_PACKET( eee, destMac, pktbuf, idx ); /* to peer or supernode */
 }
 
-
 /** Destination MAC 33:33:0:00:00:00 - 33:33:FF:FF:FF:FF is reserved for IPv6
  *  neighbour discovery.
  */
@@ -1461,8 +1424,6 @@ static int is_ethMulticast( const void * buf, size_t bufsize )
     }
     return retval;
 }
-
-
 
 /** Read a single packet from the TAP interface, process it and write out the
  *  corresponding packet to the cooked socket.
@@ -1515,7 +1476,6 @@ retry2:
         }
     }
 }
-
 
 /** A PACKET has arrived containing an encapsulated ethernet datagram - usually
  *  encrypted. */
@@ -1588,7 +1548,6 @@ static int handle_PACKET( n2n_edge_t * eee,
 
     return retval;
 }
-
 
 /** Read a datagram from the management UDP socket and take appropriate
  *  action. */
@@ -1800,7 +1759,6 @@ static void readFromMgmtSocket( n2n_edge_t * eee, int * keep_running )
     if (sendlen != msg_len)
         traceEvent(TRACE_DEBUG, "mgmt status sending: %ld: %s", sendlen, strerror(errno) );
 }
-
 
 /** Read a datagram from the main UDP socket to the internet. */
 static void readFromIPSocket( n2n_edge_t * eee )
@@ -2037,7 +1995,6 @@ static DWORD tunReadThread(LPVOID lpArg )
     return 0;
 }
 
-
 /** Start a second thread in Windows because TUNTAP interfaces do not expose
  *  file descriptors. */
 static void startTunReadThread(n2n_edge_t *eee)
@@ -2148,7 +2105,6 @@ static int supernode2addr(n2n_sock_t * sn, int af, const n2n_sn_name_t addrIn) {
 }
 
 /* ***************************************************** */
-
 
 /** Find the address and IP mode for the tuntap device.
  *
@@ -2381,13 +2337,13 @@ int main(int argc, char* argv[])
     char    tuntap_dev_name[N2N_IFNAMSIZ] = "edge0";
     char    ip_mode[N2N_IF_MODE_SIZE]="static";
     ipstr_t ip_addr = "";
-    int ip_prefixlen = 24;
+    int     ip_prefixlen = 24;
     ipstr_t ip6_addr = "";
-    int ip6_prefixlen = 64;
+    int     ip6_prefixlen = 64;
     int     mtu = DEFAULT_MTU;
     int     got_s = 0;
     struct tuntap_config tuntap_config;
-		int encrypt_mode = 2;
+		int encrypt_mode = 1;
 
 #ifndef _WIN32
     uid_t   userid = 0; /* root is the only guaranteed ID */
@@ -2511,27 +2467,27 @@ int main(int argc, char* argv[])
         case '6':
             eee.sn_af = AF_INET6;
         break;
-				case 'B':
-				{
-						if (!optarg || strlen(optarg) == 0) {
-								fprintf(stderr, "Error: Invalid -B option format. Use -B3 or -B 3\n");
-								exit(1);
-						}
+        case 'B':
+        {
+            if (!optarg || strlen(optarg) == 0) {
+                    fprintf(stderr, "Error: Invalid -B option format. Use -B3 or -B 3\n");
+                    exit(1);
+            }
 
-						for (int i = 0; optarg[i]; i++) {
-								if (!isdigit(optarg[i])) {
-										fprintf(stderr, "Error: Invalid -B option format. Use -B3 or -B 3\n");
-										exit(1);
-								}
-						}
+            for (int i = 0; optarg[i]; i++) {
+                if (!isdigit(optarg[i])) {
+                    fprintf(stderr, "Error: Invalid -B option format. Use -B3 or -B 3\n");
+                    exit(1);
+                }
+            }
 
-						encrypt_mode = atoi(optarg);
-						if (encrypt_mode < 0 || encrypt_mode > 5) {
-										fprintf(stderr, "Error: Invalid encryption mode. Use B0-B3, B5\n");
-										exit(1);
-						}
-						break;
-				}
+            encrypt_mode = atoi(optarg);
+            if (encrypt_mode < 0 || encrypt_mode > 5) {
+                    fprintf(stderr, "Error: Invalid encryption mode. Use B0-B3, B5\n");
+                    exit(1);
+            }
+            break;
+        }
         case'K':
         {
             if ( encrypt_key ) {
@@ -2752,7 +2708,6 @@ int main(int argc, char* argv[])
         eee.null_transop = 1;
     }
 
-
     if ( 0 == strcmp( "dhcp", ip_mode ) ) {
         traceEvent(TRACE_NORMAL, "Dynamic IP address assignment enabled.");
 
@@ -2825,31 +2780,27 @@ int main(int argc, char* argv[])
     }
 #endif
 
-    if(local_port > 0)
-        traceEvent(TRACE_NORMAL, "Binding to local port %d", (signed int)local_port);
+  if(local_port > 0)
+      traceEvent(TRACE_NORMAL, "Binding to local port %d", (signed int)local_port);
 
-		if (encrypt_mode == 1) {
-				eee.null_transop = 1;
-		} else if (encrypt_mode == 0) {
-				 if (strlen(eee.keyschedule) == 0) {
-						fprintf(stderr, "Error: B0 mode requires -K <keyfile>\n");
-						exit(1);
-				}
-				if (edge_init_keyschedule(&eee) != 0) {
-						fprintf(stderr, "Error: keyschedule setup failed.\n");
-						return(-1);
-				}
-		} else if (encrypt_mode == 1) {
-				eee.null_transop = 1;
-		} else if (encrypt_mode == 2) {
-				if (!encrypt_key) {
-						fprintf(stderr, "Error: B2 mode requires -k <key>\n");
-						exit(1);
-				}
-				if(edge_init_twofish(&eee, (uint8_t*)(encrypt_key), strlen(encrypt_key)) < 0) {
-						fprintf(stderr, "Error: twofish setup failed.\n");
-						return(-1);
-				}
+  if (encrypt_mode == 0) {
+      if (strlen(eee.keyschedule) == 0) {
+          fprintf(stderr, "Error: B0 mode requires -K <keyfile>\n");
+          exit(1);
+      }
+      if (edge_init_keyschedule(&eee) != 0) {
+          fprintf(stderr, "Error: keyschedule setup failed.\n");
+          return(-1);
+      }
+  } else if (encrypt_mode == 2) {
+      if (!encrypt_key) {
+          fprintf(stderr, "Error: B2 mode requires -k <key>\n");
+          exit(1);
+      }
+      if(edge_init_twofish(&eee, (uint8_t*)(encrypt_key), strlen(encrypt_key)) < 0) {
+          fprintf(stderr, "Error: twofish setup failed.\n");
+          return(-1);
+      }
 		} else if (encrypt_mode == 3) {
 				// B3 - AES-CBC
 				if (!encrypt_key) {
@@ -2861,31 +2812,24 @@ int main(int argc, char* argv[])
 						return(-1);
 				}
 		} else if (encrypt_mode == 5) {
-						// B5 - Speck
-						if (!encrypt_key) {
-										fprintf(stderr, "Error: B5 mode requires -k <key>\n");
-										exit(1);
-						}
-						if(edge_init_speck(&eee, (uint8_t*)(encrypt_key), strlen(encrypt_key)) < 0) {
-										fprintf(stderr, "Error: Speck setup failed.\n");
-										return(-1);
-						}
-						eee.tx_transop_idx = N2N_TRANSOP_SPECK_IDX;
-		}
-				if ( encrypt_key && encrypt_mode != 5 ) {
-								if(edge_init_twofish( &eee, (uint8_t *)(encrypt_key), strlen(encrypt_key) ) < 0) {
-												fprintf(stderr, "Error: twofish setup failed.\n" );
-												return(-1);
-								}
-    } else if ( strlen(eee.keyschedule) > 0 ) {
-        if (edge_init_keyschedule( &eee ) != 0 ) {
-            fprintf(stderr, "Error: keyschedule setup failed.\n" );
-            return(-1);
-        }
+				// B5 - Speck
+				if (!encrypt_key) {
+						fprintf(stderr, "Error: B5 mode requires -k <key>\n");
+						exit(1);
+				}
+				if(edge_init_speck(&eee, (uint8_t*)(encrypt_key), strlen(encrypt_key)) < 0) {
+						fprintf(stderr, "Error: Speck setup failed.\n");
+						return(-1);
+				}
+  }
 
-    }
-    /* else run in NULL mode */
-
+  /* keyschedule check should be independent of encryption modes */
+  if (strlen(eee.keyschedule) > 0 && encrypt_mode != 0) {
+      if (edge_init_keyschedule(&eee) != 0) {
+          fprintf(stderr, "Error: keyschedule setup failed.\n");
+          return(-1);
+      }
+  }
 
     eee.udp_sock = eee.supernode.family == AF_INET ? open_socket(local_port, 1 /*bind ANY*/ ) : open_socket6(local_port, 1 ) ;
     if(eee.udp_sock == -1)
@@ -2999,7 +2943,6 @@ static int run_loop(n2n_edge_t * eee )
         }
 
         /* Finished processing select data. */
-
 
         update_supernode_reg(eee, nowTime);
 
