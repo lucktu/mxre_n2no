@@ -14,7 +14,7 @@
 #define N2N_SN_LPORT_DEFAULT SUPERNODE_PORT
 #define N2N_SN_PKTBUF_SIZE   2048
 
-#define N2N_SN_MGMT_PORT     5645
+#define N2N_SN_MGMT_PORT     5646
 
 /* Transform indices - same as edge.c */
 #define N2N_TRANSOP_NULL_IDX    0
@@ -714,24 +714,15 @@ static int process_udp( n2n_sn_t * sss,
 static void help(int argc, char * const argv[])
 {
     print_n2n_version();
+    printf("\n");
 
-    printf("supernode "
-        "-l <lport> "
-        "[-4 -6] "
-#ifndef _WIN32
-        "[-t <port>] "
-#endif
-#if defined(N2N_HAVE_DAEMON)
-        "[-f] "
-#endif
-        "[-v] "
-        "[-h]\n\n");
+    printf("Usage: supernode -l <lport>\n");
+    printf("\n");
 
     fprintf( stderr, "-l <lport>\tSet UDP main listen port to <lport>\n" );
-    fprintf( stderr, "-6        \tUse IPv6 network (default is IPv4)\n" );
-    fprintf( stderr, "-4 -6     \tUse both IPv4 and IPv6 (dual-stack mode)\n" );
-#ifndef _WIN32
-    fprintf( stderr, "-t <port>\tSet management UDP port to <port> (default = 5645)\n" );
+    fprintf( stderr, "-4|-6     \tIP mode: -4 (IPv4 only), -6 (IPv6 only), both/none (dual-stack)\n" );
+ #ifndef _WIN32
+    fprintf( stderr, "-t <port>\tSet management UDP port to <port> (default 5646)\n" );
 #endif
 #if defined(N2N_HAVE_DAEMON)
     fprintf( stderr, "-f        \tRun in foreground.\n" );
@@ -761,7 +752,7 @@ int main( int argc, char * const argv[] )
     int lport_specified = 0;
 
     n2n_sn_t sss;
-    bool ipv4 = false, ipv6 = false;
+    bool ipv4 = true, ipv6 = true;
 
 #ifndef _WIN32
     /* stdout is connected to journald, so don't print data/time */
@@ -824,9 +815,6 @@ int main( int argc, char * const argv[] )
         }
 
     }
-
-    /* enable ipv4 if there was no parameter provided */
-    ipv4 = ipv4 || !ipv6;
 
     if (!lport_specified) {
         traceEvent(TRACE_ERROR, "Error: Listen port is required (-l <port>)");

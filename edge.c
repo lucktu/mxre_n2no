@@ -71,7 +71,7 @@ char const* gcrypt_version;
 
 #define N2N_PATHNAME_MAXLEN             256
 #define N2N_MAX_TRANSFORMS              16
-#define N2N_EDGE_MGMT_PORT              5644
+#define N2N_EDGE_MGMT_PORT              5664
 
 /** Positions in the transop array where various transforms are stored.
  *
@@ -626,40 +626,16 @@ static void readFromMgmtSocket( n2n_edge_t * eee, int * keep_running );
 
 static void help() {
     print_n2n_version();
+    printf("\n");
 
-    printf("edge [config_file] <options>\n");
-    printf("or:\n");
-    printf("edge "
+    printf("Usage: edge [config_file] <options>\n");
+    printf("or: edge -d <tun device> -a <tun IP address> -c <community> -k <encrypt key> -l <supernode host:port>\n");
+    printf("\n");
+
 #if N2N_CAN_NAME_IFACE && !defined(_WIN32)
-        "-d <tun device> "
-#elif N2N_CAN_NAME_IFACE && defined(_WIN32)
-        "[-d <tun device>] "
-#endif /* #if N2N_CAN_NAME_IFACE */
-        "-a [static:|dhcp:] <tun IP address>/<prefixlen> "
-        "-c <community> "
-        "-B <encryption mode> "
-        "[-k <encrypt key> | -K <key file>] "
-#if defined(N2N_HAVE_SETUID)
-        "[-u <uid> -g <gid>]"
-#endif /* #ifdef N2N_HAVE_SETUID */
-
-#if defined(N2N_HAVE_DAEMON)
-	        "\n"
-        "[-f] "
-#endif /* #if defined(N2N_HAVE_DAEMON) */
-#ifndef _WIN32
-        "[-m <MAC address>] "
-#endif
-        "-l <supernode host:port> "
-        "[-4|-6] "
-        "[-p <local port>] "
-#ifndef _WIN32
-        "[-M <mtu>] "
-#endif
-        "[-r|-R <route>] [-E] [-v] [-t <mgmt port>] [-h]\n\n");
-#ifdef N2N_CAN_NAME_IFACE
-
     printf("-d <tun device>          | tun device name\n");
+#elif N2N_CAN_NAME_IFACE && defined(_WIN32)
+    printf("-d <tun device>          | tun device name (optional)\n");
 #endif
     printf("-a <mode:IPv4/prefixlen> | Set interface IPv4 address. For DHCP use '-r -a dhcp:0.0.0.0/0'\n");
     printf("-A <IPv6>/<prefixlen>    | Set interface IPv6 address, only supported if IPv4 set to 'static'\n");
@@ -677,7 +653,7 @@ static void help() {
     printf("-k <encrypt key>         | Encryption key (ASCII, max 32) - also N2N_KEY=<encrypt key>. Not with -K.\n");
     printf("-K <key file>            | Specify a key schedule file to load. Not with -k.\n");
     printf("-l <supernode host:port> | Supernode IP:port\n");
-    printf("-4|-6                    | Resolve supernode DNS name as IPv4 or IPv6 (default: auto)\n");
+    printf("-4/-6                    | Resolve supernode DNS name as IPv4 or IPv6 (default: auto)\n");
     printf("-p <local port>          | Fixed local UDP port.\n");
 #ifndef _WIN32
     printf("-u <UID>                 | User ID (numeric) to use when privileges are dropped.\n");
@@ -695,10 +671,12 @@ static void help() {
     printf("-R <dest>/<length>,<gw>  | Enable packet forwarding and add a route, IPv4/6 is autodetected\n");
     printf("-E                       | Accept multicast MAC addresses (default=drop).\n");
     printf("-v                       | Make more verbose. Repeat as required.\n");
-    printf("-t                       | Management Socket (UDP Port or absolute path). (default %d)\n", N2N_EDGE_MGMT_PORT);
+    printf("-t <port|path>           | Management Socket (UDP Port or absolute path). (default %d)\n", N2N_EDGE_MGMT_PORT);
+    printf("-h                       | Show this help message\n");
 
     printf("\nEnvironment variables:\n");
     printf("  N2N_KEY                | Encryption key (ASCII). Not with -K or -k.\n" );
+    printf("\n");
 }
 
 
